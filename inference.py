@@ -14,102 +14,102 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-import mxnet as mx
-# from mxnet.test_utils import *
-# from config import *
-from MLP import mlp_model
-from data import get_movielens_iter, get_movielens_data
+# 
 import argparse
+import logging
+import mxnet as mx
+import numpy as np
+import multiprocessing as mp
+from data import get_movielens_iter, get_movielens_data
 import os
-import time
+from time import time
+from data import get_train_iters
+from data import get_eval_iters
+from Dataset import Dataset
+from evaluate import evaluate_model
+from mxnet import profiler
+logging.basicConfig(level=logging.DEBUG)
 
-MOVIELENS = {
-    'dataset': 'ml-10m',
-    'train': './data/ml-10M100K/r1.train',
-    'val': './data/ml-10M100K/r1.test',
-    'max_user': 71569,
-    'max_movie': 65135,
-}
-
-parser = argparse.ArgumentParser(description="Run sparse wide and deep inference",
+parser = argparse.ArgumentParser(description="Run neural collaborative filtering inference",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--num-infer-batch', type=int, default=100,
-                    help='number of batches to inference')
-parser.add_argument('--load-epoch', type=int, default=0,
-                    help='loading the params of the corresponding training epoch.')
-parser.add_argument('--batch-size', type=int, default=100,
-                    help='number of examples per batch')
+parser.add_argument('--path', nargs='?', default='data/',
+                        help='Input data path.')
+parser.add_argument('--dataset', nargs='?', default='ml-1m',
+                        help='Choose a dataset.')                                 
+parser.add_argument('--batch-size', type=int, default=256,
+                        help='number of examples per batch')
+parser.add_argument('--num_neg', type=int, default=4,
+                        help='Number of negative instances to pair with a positive instance')
+parser.add_argument('--gpus', type=str,
+                        help="list of gpus to run, e.g. 0 or 0,2. empty means using cpu().")
 parser.add_argument('--benchmark', action='store_true', default=False,
                     help='run the script for benchmark mode, not set for accuracy test.')
-parser.add_argument('--verbose', action='store_true', default=False,
-                    help='accurcy for each batch will be logged if set')
-parser.add_argument('--gpu', action='store_true', default=False,
-                    help='Inference on GPU with CUDA')
 parser.add_argument('--model-prefix', type=str, default='checkpoint',
-                    help='the model prefix')
+                    help='the model prefix') 
+parser.add_argument('--load-epoch', type=int, default=0,
+                    help='loading the params of the corresponding training epoch.')                                       
 
 if __name__ == '__main__':
-    import logging
     head = '%(asctime)-15s %(message)s'
     logging.basicConfig(level=logging.INFO, format=head)
 
     # arg parser
     args = parser.parse_args()
     logging.info(args)
-    num_iters = args.num_infer_batch
+
     batch_size = args.batch_size
+    num_negatives = args.num_neg
     benchmark = args.benchmark
-    verbose = args.verbose
     model_prefix = args.model_prefix
     load_epoch = args.load_epoch
-    ctx = mx.gpu(0) if args.gpu else mx.cpu()
 
-    # data iterator
-    data_dir = os.path.join(os.getcwd(), 'data')
-    get_movielens_data(data_dir, MOVIELENS['dataset'])
-    eval_data = get_movielens_iter(MOVIELENS['val'], batch_size)
+    ctx = [mx.gpu(int(i)) for i in args.gpus.split(',')] if args.gpus else [mx.cpu()]
+    topK = 10
+    evaluation_threads = 1 #mp.cpu_count()
+
+    # prepare dataset and iterators
+    t1 = time()
+    dataset = Dataset(args.path + args.dataset)
+    train, testRatings, testNegatives = dataset.trainMatrix, dataset.testRatings, dataset.testNegatives
+    max_user, max_movies = train.shape
+    print("Load data done [%.1f s]. #user=%d, #item=%d, #train=%d, #test=%d" 
+          %(time()-t1,  max_user, max_movies, train.nnz, len(testRatings)))
+    train_iter = get_train_iters(train, num_negatives, batch_size) 
+    val_iter = get_movielens_iter(args.path + args.dataset + '.test.rating', batch_size)
+
+   # load parameters and symbol
+    sym, arg_params, aux_params = mx.model.load_checkpoint(model_prefix, load_epoch) 
+
+     # initialize the module
+    mod = mx.module.Module(symbol=sym, context=ctx, data_names=['user', 'item'], label_names=['score'])
+    mod.bind(data_shapes=train_iter.provide_data, label_shapes=train_iter.provide_label)  
     
-    # load parameters and symbol
-    sym, arg_params, aux_params = mx.model.load_checkpoint(model_prefix, load_epoch)
-
-    # module
-    mod = mx.mod.Module(symbol=sym, context=ctx, data_names=['user', 'item'], label_names=['score']) 
-                        
-    mod.bind(data_shapes=eval_data.provide_data, label_shapes=eval_data.provide_label)
     # get the sparse weight parameter
     mod.set_params(arg_params=arg_params, aux_params=aux_params)
-
-    data_iter = iter(eval_data)
-    nbatch = 0
+   
+    # profile
+    profiler.set_config(profile_all=True,aggregate_stats=True, filename='profile_neumf.json')
+    profiler.set_state('run')
+    
     if benchmark:
-        logging.info('Inference benchmark started ...')
-        tic = time.time()
-        for i in range(num_iters):
-            try:
-                batch = data_iter.next()
-            except StopIteration:
-                data_iter.reset()
-            else:
-                mod.model_prefix(batch, is_train=False)
-                for output in mod.get_outputs():
-                    output.wait_to_read()
-                nbatch += 1
-        score = (nbatch*batch_size)/(time.time() - tic)
-        logging.info('batch size %d, process %s samples/s' % (batch_size, score))
+        logging.info('Evaluating...')
+        (hits, ndcgs) = evaluate_model(mod, testRatings, testNegatives, topK, evaluation_threads)
+        hr, ndcg = np.array(hits).mean(), np.array(ndcgs).mean()
+        print('HR = %.4f, NDCG = %.4f'  % (hr, ndcg))  
+        logging.info('Evaluating completed')
+        profiler.set_state('stop')    
     else:
         logging.info('Inference started ...')
-        # use accuracy as the metric
-        metric = mx.metric.create(['acc'])
-        accuracy_avg = 0.0
-        for batch in data_iter:
-            nbatch += 1
-            metric.reset()
+        nbatch=0
+        tic = time()
+        num_samples = 0
+        for batch in train_iter:     
             mod.forward(batch, is_train=False)
-            mod.update_metric(metric, batch.label)
-            # print(metric.get())
-            # print(metric.get() [0][1])
-            accuracy_avg += metric.get()[1][0]
-            if args.verbose:
-                logging.info('batch %d, accuracy = %s' % (nbatch, metric.get()))
-        logging.info('averged accuracy on eval set is %.5f' % (accuracy_avg/nbatch))
+            mx.nd.waitall()
+            nbatch += 1
+        toc = time()
+        fps = (nbatch * batch_size)/(toc - tic)
+        logging.info('Inference completed')
+        logging.info('batch size %d, process %.4f samples/s' % (batch_size, fps))
+        
+

@@ -33,7 +33,7 @@ from evaluate import evaluate_model
 from mxnet import profiler
 logging.basicConfig(level=logging.DEBUG)
 
-parser = argparse.ArgumentParser(description="Run matrix factorization with sparse embedding",
+parser = argparse.ArgumentParser(description="Run neural collaborative filtering inference",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--path', nargs='?', default='data/',
                         help='Input data path.')
@@ -116,10 +116,8 @@ if __name__ == '__main__':
     mod = mx.module.Module(net, context=ctx, data_names=['user', 'item'], label_names=['score'])
     mod.bind(data_shapes=train_iter.provide_data, label_shapes=train_iter.provide_label)  
     mod.init_params(initializer=mx.init.Xavier(factor_type="in", magnitude=2.34))
-    # optim = mx.optimizer.create('sgd', learning_rate=learning_rate, rescale_grad=1.0/batch_size)
-    optim = mx.optimizer.Adam()
-    mod.init_optimizer(optimizer=optim, kvstore='device')
-    # use MSE as the metric
+    mod.init_optimizer(optimizer=mx.optimizer.Adam(), kvstore='device')
+    # use cross entropy as the metric
     metric = mx.metric.create(cross_entropy)
     speedometer = mx.callback.Speedometer(batch_size, log_interval)
     # profile
@@ -131,10 +129,11 @@ if __name__ == '__main__':
     if train:
         logging.info('Training started ...')
         for epoch in range(num_epoch): 
+            profiler.pause()
             t1 = time()
             nbatch = 0
             metric.reset()
-            profiler.resume()
+            # profiler.resume()
             for batch in train_iter:
                 nbatch += 1
                 mod.prepare(batch, sparse_row_id_fn=batch_row_ids)
@@ -149,12 +148,13 @@ if __name__ == '__main__':
                 speedometer_param = mx.model.BatchEndParam(epoch=epoch, nbatch=nbatch,
                                                         eval_metric=metric, locals=locals())
                 speedometer(speedometer_param) # print epoch nbatch metric
-            profiler.pause()
+            # profiler.pause()
             # reset iterator
             train_iter.reset()
             # save model
             mod.save_checkpoint("checkpoint", epoch, save_optimizer_states=True)
-        
+            
+            profiler.resume()
             t2 = time()
             # compute hit ratio
             (hits, ndcgs) = evaluate_model(mod, testRatings, testNegatives, topK, evaluation_threads)
