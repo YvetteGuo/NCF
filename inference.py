@@ -110,6 +110,6 @@ if __name__ == '__main__':
         toc = time()
         fps = (nbatch * batch_size)/(toc - tic)
         logging.info('Inference completed')
-        logging.info('batch size %d, process %.4f samples/s' % (batch_size, fps))
+        print('batch size %d, process %.4f samples/s' % (batch_size, fps))
         
 

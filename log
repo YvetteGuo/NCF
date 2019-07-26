@@ -1,0 +1,16 @@
+C:\Users\yingguo\AppData\Local\Continuum\anaconda3\lib\site-packages\h5py\__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+INFO:root:Namespace(batch_size=2000000, benchmark=False, dataset='ml-1m', gpus=None, load_epoch=0, model_prefix='checkpoint', num_neg=4, path='data/')
+INFO:root:Preparing data iterators for data/ml-1m.test.rating ... 
+INFO:root:Inference started ...
+INFO:root:Inference completed
+Load data done [14.5 s]. #user=6040, #item=3706, #train=994169, #test=6040
+batch size 2000000, process 515640.2933 samples/s
+C:\Users\yingguo\AppData\Local\Continuum\anaconda3\lib\site-packages\h5py\__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+INFO:root:Namespace(batch_size=5000000, benchmark=False, dataset='ml-1m', gpus=None, load_epoch=0, model_prefix='checkpoint', num_neg=4, path='data/')
+INFO:root:Preparing data iterators for data/ml-1m.test.rating ... 
+INFO:root:Inference started ...
+INFO:root:Inference completed
+Load data done [15.1 s]. #user=6040, #item=3706, #train=994169, #test=6040
+batch size 5000000, process 359815.7890 samples/s

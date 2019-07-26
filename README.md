@@ -45,9 +45,6 @@ test.negative:
     python interence.py --factor-size 64 --layer=[256,256,128,64] --batch-size=256 
 
 ## Training on GPU
-    # KMP/OMP Settings
-    export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
-    export OMP_NUM_THREADS=28
     python train.py --factor-size 64 --layer=[256,256,128,64] --gpus 0
 
 ## Inference on GPU
@@ -56,3 +53,5 @@ test.negative:
 ## Evalute accuray
     python interence.py --factor-size 64 --layer=[256,256,128,64] --batch-size=256 --benchmark
 
+## bash file (multiple batch sizes)
+    ./run.sh 2>&1 |tee log
