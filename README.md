@@ -42,16 +42,16 @@ test.negative:
     python train.py --factor-size 64 --layer=[256,256,128,64]
 
 ## Inference on CPU
-    python interence.py --factor-size 64 --layer=[256,256,128,64] --batch-size=256 
+    python inference.py --load-epoch 2 --batch-size=256 
 
 ## Training on GPU
     python train.py --factor-size 64 --layer=[256,256,128,64] --gpus 0
 
 ## Inference on GPU
-    python interence.py --factor-size 64 --layer=[256,256,128,64] --batch-size=256 --gpus 0
+    python inference.py --load-epoch 2 --batch-size=256 --gpus 0 
 
 ## Evalute accuray
-    python interence.py --factor-size 64 --layer=[256,256,128,64] --batch-size=256 --benchmark
+    python inference.py --load-epoch 2 --batch-size=256 --benchmark
 
 ## bash file (multiple batch sizes)
     ./run.sh 2>&1 |tee log
