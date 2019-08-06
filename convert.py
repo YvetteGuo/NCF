@@ -30,7 +30,7 @@ np.random.seed(1234)
 logging.basicConfig(level=logging.DEBUG)
 
 parser = argparse.ArgumentParser(description="convert movielens data for ncf model",
-                                 formatter_class=argparse.ArgumenatDefaultsHelpFormatter)
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--path', nargs='?', default='./data/',
                     help='Input data path.')
 parser.add_argument('--dataset', nargs='?', default='ml-20m', choices=['ml-20m'],
