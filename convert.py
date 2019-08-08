@@ -45,12 +45,12 @@ def get_movielens_data(data_dir, dataset):
     if not os.path.exists(data_dir + '%s.zip' % dataset):
         os.mkdir(data_dir)
         urllib.request.urlretrieve('http://files.grouplens.org/datasets/movielens/%s.zip' % dataset, data_dir + dataset + '.zip')
-    with zipfile.ZipFile(data_dir + "%s.zip" % dataset, "r") as f:
-        f.extractall(data_dir + "./")
+        with zipfile.ZipFile(data_dir + "%s.zip" % dataset, "r") as f:
+            f.extractall(data_dir + "./")
 
 def write_negative_examples(filename, val_data, max_items, negative_num=999):
     f=open(filename,'a')
-    epoch=val_data.shape[0]//1000 # number of blocks
+    epoch=val_data.shape[0]//1000+1 # number of blocks
     for i in range(epoch):
         print("\r epoch %d" % i)
         start=i*1000
@@ -72,7 +72,7 @@ def write_negative_examples(filename, val_data, max_items, negative_num=999):
             neg_mat.append(neg_data)
 
         neg_mat = np.hstack([val_mat,neg_mat]) # 横向合并
-        np.savetxt(f, neg_mat, fmt="%d")
+        np.savetxt(f, neg_mat, delimiter='\t', fmt="%d")
     f.close()
 
 
@@ -103,12 +103,12 @@ if __name__ == '__main__':
     valid_data['userId'] = valid_data.loc[:,'userId'] - 1
     valid_data['movieId'] = valid_data.loc[:,'movieId'] - 1
 
-    logging.info('save training dataset into %s' % (data_dir + dataset + '/ml-20m.train.rating'))
-    train_data.to_csv(data_dir + dataset + '/ml-20m.train.rating', sep='\t', header=False, index=False)
-    logging.info('save validation dataset into %s' % (data_dir + dataset + '/ml-20m.test.rating'))
-    valid_data.to_csv(data_dir + dataset + '/ml-20m.test.rating', sep='\t', header=False, index=False)
+    logging.info('save training dataset into %s' % (data_dir + dataset + '.train.rating'))
+    train_data.to_csv(data_dir + dataset + '.train.rating', sep='\t', header=False, index=False)
+    logging.info('save validation dataset into %s' % (data_dir + dataset + '.test.rating'))
+    valid_data.to_csv(data_dir + dataset + '.test.rating', sep='\t', header=False, index=False)
 
     if not args.no_negative:
-        logging.info('save negative dataset into %s' % (data_dir + dataset + '/ml-20m.test.negative'))
-        write_negative_examples(data_dir + dataset + '/ml-20m.test.negative',
+        logging.info('save negative dataset into %s' % (data_dir + dataset + '.test.negative'))
+        write_negative_examples(data_dir + dataset + '.test.negative',
                                 val_data=valid_data, max_items=max_items, negative_num=negative_num)
