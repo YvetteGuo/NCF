@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 # 
+import math
 import os
 import logging
 import urllib
@@ -50,9 +51,9 @@ def get_movielens_data(data_dir, dataset):
 
 def write_negative_examples(filename, val_data, max_items, negative_num=999):
     f=open(filename,'a')
-    epoch=val_data.shape[0]//1000+1 # number of blocks
+    epoch=math.ceil(float(val_data.shape[0])/float(1000)) # number of blocks
     for i in range(epoch):
-        print("\r epoch %d" % i)
+        print("\r epoch %d" % i
         start=i*1000
         if i == epoch-1:
             end=-1 # in last cycle, the block is less then 1000
