@@ -17,10 +17,11 @@ We use MXnet with MKL-DNN as the backend.
         pip install mxnet-mkl --pre
 - MXNet version for GPU: '1.5.0' 
         
-        pip install mxnet-cu92mkl --pre
+        pip install mxnet-cu90mkl --pre
 
 ## DataSet
 MovieLens 1 Million (ml-1m) 
+MovieLens 20 Million (ml-20m)
 
 train.rating:
  - Train file.
