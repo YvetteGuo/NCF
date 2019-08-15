@@ -20,7 +20,7 @@ import logging
 import mxnet as mx
 import numpy as np
 import multiprocessing as mp
-from data import get_movielens_iter, get_movielens_data
+from data import get_movielens_iter
 from MF import mf_model
 from MLP import mlp_model
 from GMF import gmf_model
@@ -37,15 +37,15 @@ parser = argparse.ArgumentParser(description="Run neural collaborative filtering
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--path', nargs='?', default='data/',
                         help='Input data path.')
-parser.add_argument('--dataset', nargs='?', default='ml-1m',
+parser.add_argument('--dataset', nargs='?', default='ml-20m',
                         help='Choose a dataset.')                                 
 parser.add_argument('--num-epoch', type=int, default=3,
                         help='number of epochs to train')
 parser.add_argument('-b','--batch-size', type=int, default=256,
                         help='number of examples per batch')
-parser.add_argument('-f','--factor-size', type=int, default=8,
+parser.add_argument('-f','--factor-size', type=int, default=64,
                         help="the factor size of the embedding operation")
-parser.add_argument('-l','--layers', nargs='?', default='[64,32,16,8]',
+parser.add_argument('-l','--layers', nargs='?', default='[256,256,128,64]',
                         help="Size of each layer. Note that the first layer is the concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
 parser.add_argument('--log-interval', type=int, default=1000,
                         help='logging interval')
@@ -171,7 +171,9 @@ if __name__ == '__main__':
             
     else:
         logging.info('Evaluating...')
-        sym, arg_params, aux_params = mx.model.load_checkpoint('model/ml-20m/checkpoint', 0)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        model_path = os.path.join(dir_path, 'model', args.dataset)
+        sym, arg_params, aux_params = mx.model.load_checkpoint(os.path.join(model_path, "checkpoint"), 0)
         mod.set_params(arg_params=arg_params, aux_params=aux_params)
 
         (hits, ndcgs) = evaluate_model(mod, testRatings, testNegatives, topK, evaluation_threads)

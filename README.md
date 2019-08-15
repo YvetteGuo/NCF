@@ -20,7 +20,13 @@ We use MXnet with MKL-DNN as the backend.
         pip install mxnet-cu90mkl --pre
 
 ## DataSet
-MovieLens 1 Million (ml-1m) 
+- MovieLens 1 Million (ml-1m)
+
+        python convert.py --dataset ml-1m --negative-num 99
+
+- MovieLens 20 Million (ml-2m)
+
+        python convert.py
 
 train.rating:
  - Train file.
@@ -32,20 +38,20 @@ test.rating:
 
 test.negative:
 - test file (negative instances).
-- Each line corresponds to the line of test.rating, containing 99 negative samples.
-- Each line is in the format: (userID,itemID)\t negativeItemID1\t negativeItemID2 ...
+- Each line corresponds to the line of test.rating, containing 99 or 999 negative samples.
+- Each line is in the format: userID\t itemID\t negativeItemID1\t negativeItemID2 ...
 
 ## Training on CPU
     # KMP/OMP Settings
     export KMP_AFFINITY=granularity=fine,noduplicates,compact,1,0
-    export OMP_NUM_THREADS=28
-    python train.py --factor-size 64 --layer=[256,256,128,64]
+    export OMP_NUM_THREADS=56
+    python train.py 
 
 ## Inference on CPU
     python inference.py --load-epoch 2 --batch-size=256 
 
 ## Training on GPU
-    python train.py --factor-size 64 --layer=[256,256,128,64] --gpus 0
+    python train.py --gpus 0
 
 ## Inference on GPU
     python inference.py --load-epoch 2 --batch-size=256 --gpus 0 

@@ -1,13 +1,6 @@
 import os, logging
 import mxnet as mx
 from Dataset import *
-def get_movielens_data(data_dir, prefix):
-    if not os.path.exists(os.path.join(data_dir, "ml-10M100K")):
-        mx.test_utils.get_zip_data(data_dir,
-                                   "http://files.grouplens.org/datasets/movielens/%s.zip" % prefix,
-                                   prefix + ".zip")
-        assert os.path.exists(os.path.join(data_dir, "ml-10M100K"))
-        os.system("cd data/ml-10M100K; chmod +x allbut.pl; sh split_ratings.sh; cd -;")
 
 def get_movielens_iter(filename, batch_size):
     """Not particularly fast code to parse the text file and load into NDArrays.

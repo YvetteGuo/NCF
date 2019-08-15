@@ -41,7 +41,7 @@ class Dataset(object):
             while line != None and line != "":
                 arr = line.split("\t")
                 negatives = []
-                for x in arr[1: ]:
+                for x in arr[2: ]:
                     negatives.append(int(x))
                 negativeList.append(negatives)
                 line = f.readline()
@@ -69,7 +69,6 @@ class Dataset(object):
             while line != None and line != "":
                 arr = line.split("\t")
                 user, item  = int(arr[0]), int(arr[1])
-                # if (rating > 0):
                 mat[user, item] = 1.0
                 line = f.readline()    
         return mat

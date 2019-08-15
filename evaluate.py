@@ -65,7 +65,7 @@ def eval_one_rating(idx):
     # Get prediction scores
     map_item_score = {}
     users = np.full(len(items), u, dtype = 'int32') # 100维的user 
-    iter_eval = get_eval_iters(users, items, batch_size=100)
+    iter_eval = get_eval_iters(users, items, batch_size=1000)
     predictions = _model.predict( iter_eval ) # eval_data must be of type NDArray or DataIter, new_nd_iter
     for i in range(len(items)): # 100个标号 
         item = items[i]
