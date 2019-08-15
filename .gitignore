@@ -4,6 +4,5 @@
 .vscode/
 __pycache__/
 data/
-log
-data_1/
+*log
 
