@@ -122,7 +122,7 @@ if __name__ == '__main__':
     # profiler.set_state('run')
 
     best_hr, best_ndcg, best_iter = -1, -1, -1
-    train = True
+    train = False
     if train:
         logging.info('Training started ...')
         for epoch in range(num_epoch): 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
             model_path = os.path.join(dir_path, 'model', args.dataset)
             if not os.path.exists(model_path):
                 os.makedirs(model_path)
-            mod.save_checkpoint(os.path.join(model_path), epoch)
+            mod.save_checkpoint(os.path.join(model_path, "checkpoint"), epoch)
             # profiler.resume()
             t2 = time()
             # compute hit ratio
@@ -171,7 +171,7 @@ if __name__ == '__main__':
             
     else:
         logging.info('Evaluating...')
-        sym, arg_params, aux_params = mx.model.load_checkpoint('checkpoint', 0)
+        sym, arg_params, aux_params = mx.model.load_checkpoint('model/ml-20m/checkpoint', 0)
         mod.set_params(arg_params=arg_params, aux_params=aux_params)
 
         (hits, ndcgs) = evaluate_model(mod, testRatings, testNegatives, topK, evaluation_threads)
