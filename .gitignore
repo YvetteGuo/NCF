@@ -3,6 +3,5 @@
 *.json
 .vscode/
 __pycache__/
-data/
-log
+*.log
 

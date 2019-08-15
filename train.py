@@ -20,7 +20,7 @@ import logging
 import mxnet as mx
 import numpy as np
 import multiprocessing as mp
-from data import get_movielens_iter, get_movielens_data
+from data import get_movielens_iter
 from MF import mf_model
 from MLP import mlp_model
 from GMF import gmf_model
@@ -30,7 +30,7 @@ from time import time
 from data import get_train_iters
 from Dataset import Dataset
 from evaluate import evaluate_model
-from mxnet import profiler
+# from mxnet import profiler
 logging.basicConfig(level=logging.DEBUG)
 
 parser = argparse.ArgumentParser(description="Run neural collaborative filtering inference",
@@ -41,13 +41,13 @@ parser.add_argument('--dataset', nargs='?', default='ml-1m',
                         help='Choose a dataset.')                                 
 parser.add_argument('--num-epoch', type=int, default=3,
                         help='number of epochs to train')
-parser.add_argument('-l','--learning-rate', type=float, default=0.001,
-                        help='learning rate for optimizer')
+# parser.add_argument('-l','--learning-rate', type=float, default=0.001,
+#                         help='learning rate for optimizer')
 parser.add_argument('-b','--batch-size', type=int, default=256,
                         help='number of examples per batch')
 parser.add_argument('-f','--factor-size', type=int, default=8,
                         help="the factor size of the embedding operation")
-parser.add_argument('--layers', nargs='?', default='[64,32,16,8]',
+parser.add_argument('-l','--layers', nargs='?', default='[64,32,16,8]',
                         help="Size of each layer. Note that the first layer is the concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
 parser.add_argument('--log-interval', type=int, default=100,
                         help='logging interval')
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     
     num_epoch = args.num_epoch
     num_negatives = args.num_neg
-    learning_rate=args.learning_rate
+    # learning_rate=args.learning_rate
     batch_size = args.batch_size
     factor_size = args.factor_size
     model_layers= eval(args.layers)
@@ -116,13 +116,13 @@ if __name__ == '__main__':
     mod = mx.module.Module(net, context=ctx, data_names=['user', 'item'], label_names=['score'])
     mod.bind(data_shapes=train_iter.provide_data, label_shapes=train_iter.provide_label)  
     mod.init_params(initializer=mx.init.Xavier(factor_type="in", magnitude=2.34))
-    mod.init_optimizer(optimizer=mx.optimizer.Adam(), kvstore='device')
+    mod.init_optimizer(optimizer=learner, kvstore='device')
     # use cross entropy as the metric
     metric = mx.metric.create(cross_entropy)
     speedometer = mx.callback.Speedometer(batch_size, log_interval)
     # profile
-    profiler.set_config(profile_all=True,aggregate_stats=True,filename='profile_neumf.json')
-    profiler.set_state('run')
+    # profiler.set_config(profile_all=True,aggregate_stats=True,filename='profile_neumf.json')
+    # profiler.set_state('run')
 
     best_hr, best_ndcg, best_iter = -1, -1, -1
     train = True
@@ -154,7 +154,7 @@ if __name__ == '__main__':
             # save model
             mod.save_checkpoint("checkpoint", epoch, save_optimizer_states=True)
             
-            profiler.resume()
+            # profiler.resume()
             t2 = time()
             # compute hit ratio
             (hits, ndcgs) = evaluate_model(mod, testRatings, testNegatives, topK, evaluation_threads)
@@ -164,7 +164,7 @@ if __name__ == '__main__':
             # best hit ratio
             if hr > best_hr:
                 best_hr, best_ndcg, best_iter = hr, ndcg, epoch
-        profiler.set_state('stop')      
+        # profiler.set_state('stop')      
         print("End. Best Iteration %d:  HR = %.4f, NDCG = %.4f. " %(best_iter, best_hr, best_ndcg))
         logging.info('Training completed.')
             
